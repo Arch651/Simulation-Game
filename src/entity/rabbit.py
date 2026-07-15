@@ -35,7 +35,7 @@ class RabbitEntity(BaseEntity):
             health=10,
             hunger=100,
             thirst=10,
-            movement_speed=10,
+            movement_speed=2,
             food_type=EntityFoodType.herbivore,
             hunger_restore=2,
             thirst_restore=0,

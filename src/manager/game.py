@@ -64,14 +64,14 @@ class GameManager:
 
         self.running: bool = True
         self._tick_rate: int = 60 # default will be 60
-        self.game_refresh_tick_rate: int = 120
+        self.game_refresh_tick_rate: int = 30
+        self.action_loop_max_counter: int = 3 # experimental
+        self.action_loop_current_counter: int = 0 # experimental
 
         # spawn factor information
         self.spawn_rate: int = 50
         self.queue_process_rate: int = 200
         self.last_refresh = None
-
-        # entity factor information
 
         # now we store the different data stores. Things that will track the data for the game
         self.field_size: int  = self.game_world_x_pixels * self.game_world_y_pixels
@@ -140,7 +140,6 @@ class GameManager:
 
     
     def main_game_loop(self):
-
         # parts of the game that should run before rendering like initial
         # enviornment and entity generation
 
@@ -210,8 +209,12 @@ class GameManager:
                 self.entity_action_manager.process_passive_actions()
                 self.entity_tracker.remove_dead_entities()
 
-                self.entity_action_manager.queue_voluntary_action()
-                self.entity_action_manager.process_voluntary_actions()
+                if self.action_loop_current_counter == self.action_loop_max_counter:
+                    self.entity_action_manager.queue_voluntary_action() 
+                    self.entity_action_manager.process_voluntary_actions()
+                    self.action_loop_current_counter = 0
+                else:
+                    self.action_loop_current_counter += 1
 
                 self.last_refresh = current_loop_start
 
