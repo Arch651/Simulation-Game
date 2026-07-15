@@ -13,19 +13,19 @@ from src.utils.enums import EnviornmentTypes, EntityTypes, EntityFoodType
 class Tile:
     def __init__(
         self,
+        window,
         x_cord: int,
         y_cord: int,
         length: float,
         width: float,
-        window,
-        board_size: int
+        entity_tracker: EntityTracker,
+        env_tracker: EnviornmentTracker
     ):
         self.x_cord: int = x_cord
         self.y_cord: int = y_cord
         self.length: float = length
         self.width: float = width
         self.window = window
-        self.board_size: int = board_size
 
         self.color: tuple[int] = (99, 81, 71)
         self._has_updated: bool = True
@@ -44,21 +44,14 @@ class Tile:
         
         # enviornment details
         self.current_enviornment: EnviornmentTypes | None = None
-        self.env_tracker_instance: EnviornmentTracker = EnviornmentTracker(
-            window=self.window,
-            board_size=self.board_size
-        )
-
+        self.env_tracker_instance: EnviornmentTracker = env_tracker
         # entity details
         self.entity_exists: bool = False
         self.entities_on_tile: dict[EntityFoodType,list[str]] = {
             key:[]
             for key in EntityFoodType
         }
-        self.entity_tracker_instance: EntityTracker = EntityTracker(
-            window=self.window,
-            board_size=self.board_size
-        )
+        self.entity_tracker_instance: EntityTracker = entity_tracker
 
     def render(self):
         

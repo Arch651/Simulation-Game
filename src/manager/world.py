@@ -141,12 +141,13 @@ class World:
             res = []
             for x_cord in range(self.game_world_x_pixels):
                 res.append(Tile(
+                    window=self.window,
                     x_cord=math.ceil(x_cord * self.length_per_pixel) + self.game_x,
                     y_cord=math.ceil(y_cord * self.width_per_pixel) + self.game_y,
                     length=self.length_per_pixel,
                     width=self.width_per_pixel, 
-                    window=self.window,
-                    board_size=self.field_size
+                    entity_tracker=self.entity_tracker,
+                    env_tracker=self.env_tracker
                 ))
             self.tile_grid.append(res)
     
@@ -170,8 +171,6 @@ class World:
         # parts of the game that should run before rendering like initial
         # enviornment and entity generation
 
-        self.generate_game_world()
-
         # create the env generator
         if self.env_generator == None:
             self.env_generator = EnviornmentGenerator(
@@ -191,6 +190,8 @@ class World:
                 process_rate=self.queue_process_rate,
                 new_entity_gen_rate=1 #self.spawn_rate
             )
+
+        self.generate_game_world()
 
         while self.running:
             # check if the game window has been closed
