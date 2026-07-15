@@ -3,6 +3,7 @@ import random
 
 from src.utils.mapper import mapper
 from src.data_stores.tile import Tile
+from src.manager.world import WorldManager
 from src.data_stores.tick import EnviornmentTick
 
 class EnviornmentGenerator:
@@ -12,11 +13,11 @@ class EnviornmentGenerator:
         spaces_on_y: int,
         process_rate: int,
         new_event_gen_rate: int,
-        tile_grid: list[list[Tile]],
+        world_manager: WorldManager
     ):
         self.spaces_on_x: int = spaces_on_x
         self.spaces_on_y: int = spaces_on_y
-        self.tile_grid: list[list[Tile]] = tile_grid
+        self.world_manager: WorldManager = world_manager
 
         # lets go for a queue approach
         self.process_queue: list[EnviornmentTick] = []
@@ -31,10 +32,15 @@ class EnviornmentGenerator:
             (event_to_process.x_cord,event_to_process.y_cord)
         )
 
+        world_tile = self.world_manager.get_tile_information(
+            x_cord=event_to_process.x_cord,
+            y_cord=event_to_process.y_cord
+        )
+
         if event_to_process.spawn_type == None:
-            event_to_process.spawn_type = self.tile_grid[event_to_process.y_cord][event_to_process.x_cord].env_tick()
+            event_to_process.spawn_type = world_tile.env_tick()
         else:
-            self.tile_grid[event_to_process.y_cord][event_to_process.x_cord].env_tick(type_to_spawn=event_to_process.spawn_type)
+            world_tile.env_tick(type_to_spawn=event_to_process.spawn_type)
 
         if event_to_process.spawn_type == None:
             # failed to spawn anything

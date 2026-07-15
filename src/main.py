@@ -1,4 +1,4 @@
-from src.manager.world import World
+from src.manager.game import GameManager
 
 
 def main():
@@ -6,8 +6,9 @@ def main():
     base_length_per_pixel: float = 12
     base_width_per_pixel: float = 10
 
-    world_obj = World(
-        length_per_pixel=base_length_per_pixel, width_per_pixel=base_width_per_pixel
+    world_obj = GameManager(
+        length_per_pixel=base_length_per_pixel, 
+        width_per_pixel=base_width_per_pixel
     )
 
     world_obj.main_game_loop()

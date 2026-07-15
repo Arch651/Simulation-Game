@@ -1,10 +1,14 @@
 import random
 import pygame
-from abc import abstractmethod
+from abc import ABC,abstractmethod
 
-from src.utils.enums import EntityFoodType, Direction
+from src.utils.enums import (
+    Direction,
+    EntityActions,
+    EntityFoodType, 
+)
 
-class BaseEntity:
+class BaseEntity(ABC):
     def __init__(
         self,
         window,

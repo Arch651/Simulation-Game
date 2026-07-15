@@ -6,6 +6,7 @@ from rich import print
 
 from src.utils.mapper import mapper
 from src.data_stores.tile import Tile
+from src.manager.world import WorldManager
 from src.data_stores.tick import EntityTick
 
 
@@ -16,11 +17,11 @@ class EntityGenerator:
         spaces_on_y: int,
         process_rate: int,
         new_entity_gen_rate: int,
-        tile_grid: list[list[Tile]],
+        world_manager: WorldManager
     ):
         self.spaces_on_x: int = spaces_on_x
         self.spaces_on_y: int = spaces_on_y
-        self.tile_grid: list[list[Tile]] = tile_grid
+        self.world_manager: WorldManager = world_manager
 
         # queue details
         self.process_queue: list[EntityTick] = []
@@ -34,15 +35,16 @@ class EntityGenerator:
             (event_to_process.x_cord, event_to_process.y_cord)
         )
 
+        world_tile = self.world_manager.get_tile_information(
+            x_cord=event_to_process.x_cord,
+            y_cord=event_to_process.y_cord
+        )
+
         if event_to_process.spawn_type == None:
             # this is the first entity in this pack
-            event_to_process.spawn_type = self.tile_grid[event_to_process.y_cord][
-                event_to_process.x_cord
-            ].entity_tick()
+            event_to_process.spawn_type = world_tile.entity_tick()
         else:
-            self.tile_grid[event_to_process.y_cord][
-                event_to_process.x_cord
-            ].entity_tick(type_to_spawn=event_to_process.spawn_type)
+            world_tile.entity_tick(type_to_spawn=event_to_process.spawn_type)
 
         if event_to_process.spawn_type == None:
             # spawning an entity has failed
