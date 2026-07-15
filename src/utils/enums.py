@@ -24,3 +24,12 @@ class Direction(Enum):
     down = "down"
     left = "left"
     right = "right"
+
+class EntityActions(Enum):
+    wander = "wander"
+    eat = "eat"
+    drink = "drink"
+    idle = "idle"
+    escape = "escape"
+    chase = "chase"
+    turn = "turn"

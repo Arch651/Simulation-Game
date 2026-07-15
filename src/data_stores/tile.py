@@ -4,7 +4,6 @@
 import pygame
 import random
 from uuid import uuid4
-from rich import print
 
 from src.manager.entity import EntityTracker
 from src.manager.enviornment import EnviornmentTracker
@@ -14,6 +13,8 @@ class Tile:
     def __init__(
         self,
         window,
+        world,
+        identifier: tuple[int],
         x_cord: int,
         y_cord: int,
         length: float,
@@ -21,11 +22,14 @@ class Tile:
         entity_tracker: EntityTracker,
         env_tracker: EnviornmentTracker
     ):
+        self.identifier: tuple = identifier
+
         self.x_cord: int = x_cord
         self.y_cord: int = y_cord
         self.length: float = length
         self.width: float = width
         self.window = window
+        self.world = world
 
         self.color: tuple[int] = (99, 81, 71)
         self._has_updated: bool = True
@@ -145,10 +149,12 @@ class Tile:
 
                 entity_id = str(uuid4())
                 entity_food_type = self.entity_tracker_instance.register_entity(
+                    tile_identifier=self.identifier,
                     identifier=entity_id,
                     key=type_to_spawn,
                     x_cord=self.x_cord,
-                    y_cord=self.y_cord
+                    y_cord=self.y_cord,
+                    world=self.world
                 )
 
                 self.entities_on_tile[entity_food_type].append(entity_id)
@@ -166,7 +172,7 @@ class Tile:
         return self._has_updated
         
     @has_updated.setter
-    def has_updates(self,value:bool):
+    def has_updated(self,value:bool):
         if value not in (True, False):
             raise Exception(f"Incorrect value passed for tile has_updated - {value}")
         self._has_updated = value

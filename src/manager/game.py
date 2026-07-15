@@ -64,7 +64,7 @@ class GameManager:
 
         self.running: bool = True
         self._tick_rate: int = 60 # default will be 60
-        self.game_refresh_tick_rate: int = 10
+        self.game_refresh_tick_rate: int = 120
 
         # spawn factor information
         self.spawn_rate: int = 50
@@ -206,8 +206,12 @@ class GameManager:
                 # after a set amount of time we will try to update the env again
                 self.env_generator.process_loop()
                 self.entity_generator.process_loop()
-                self.entity_action_manager.queue_action()
-                self.entity_action_manager.process_actions()
+                
+                self.entity_action_manager.process_passive_actions()
+                self.entity_tracker.remove_dead_entities()
+
+                self.entity_action_manager.queue_voluntary_action()
+                self.entity_action_manager.process_voluntary_actions()
 
                 self.last_refresh = current_loop_start
 

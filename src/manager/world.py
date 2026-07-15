@@ -50,6 +50,8 @@ class WorldManager:
             for x_cord in range(self.game_world_x_pixels):
                 res.append(Tile(
                     window=self.window,
+                    identifier=(x_cord,y_cord),
+                    world=self,  # i am as amazed as the person who is seeing this
                     x_cord=math.ceil(x_cord * self.length_per_pixel) + game_x,
                     y_cord=math.ceil(y_cord * self.width_per_pixel) + game_y,
                     length=self.length_per_pixel,
@@ -72,3 +74,11 @@ class WorldManager:
     
     def get_tile_information(self,x_cord: int, y_cord: int) -> Tile:
         return self.tile_grid[y_cord][x_cord]
+    
+    @property
+    def max_length(self):
+        return self.game_world_x_pixels 
+    
+    @property
+    def max_width(self):
+        return self.game_world_y_pixels 
