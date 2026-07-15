@@ -10,6 +10,7 @@ import pygame
 from rich import print
 
 from src.data_stores.tile import Tile
+from src.manager.action import EntityAction
 from src.manager.entity import EntityTracker
 from src.manager.enviornment import EnviornmentTracker
 from src.entity.entity_generator import EntityGenerator
@@ -81,6 +82,7 @@ class World:
         )
 
         self.entity_generator: None | EntityGenerator = None
+        self.entity_action_manager: None | EntityAction = None
         self.entity_tracker: EntityTracker = EntityTracker(
             window=self.window,
             board_size=self.field_size
@@ -191,6 +193,11 @@ class World:
                 new_entity_gen_rate=1 #self.spawn_rate
             )
 
+        self.entity_action_manager = EntityAction(
+            entity_tracker=self.entity_tracker
+        )
+
+        # generate the game tiles
         self.generate_game_world()
 
         while self.running:
@@ -214,6 +221,9 @@ class World:
                 # after a set amount of time we will try to update the env again
                 self.env_generator.process_loop()
                 self.entity_generator.process_loop()
+                self.entity_action_manager.queue_action()
+                self.entity_action_manager.process_actions()
+
                 self.last_refresh = current_loop_start
 
             self.render_tile()

@@ -1,5 +1,6 @@
 import random
 import pygame
+from abc import abstractmethod
 
 from src.utils.enums import EntityFoodType, Direction
 
@@ -118,6 +119,17 @@ class BaseEntity:
         pygame.draw.rect(surface=self.window, color=self.head_color, rect=head_rect_object)
         pygame.draw.rect(surface=self.window, color=(0,0,0), rect=body_rect_object,width=1)
     
+    @abstractmethod
+    def decide_action(self) -> bool:
+        # decide what action to perform in the current cycle
+        # return a True if an action is to be performed else a False
+        pass
+
+    @abstractmethod
+    def perform_action(self):
+        # perform the decided action
+        pass
+
     @property
     def food_class(self):
         return self.food_type
