@@ -23,8 +23,8 @@ class GlobalSettings:
 
         # these will determine the size of the world
         # these will also be used to calculate the coordinate system for entities
-        self.tiles_along_x: int = 195
-        self.tiles_along_y: int = 123
+        self.tiles_along_x: int = 390
+        self.tiles_along_y: int = 246
         self.scale_along_x: int = scale_along_x
         self.scale_along_y: int = scale_along_y
 
@@ -47,7 +47,7 @@ class GlobalSettings:
         self.game_area_x_length: int = self.tiles_along_x * self.scale_along_x
         self.game_area_y_length: int = self.tiles_along_y * self.scale_along_y
 
-        self.game_area_x_offser: int = (
+        self.game_area_x_offset: int = (
             self.offset_from_window_edge + self.area_border_offset
         )
 
@@ -72,6 +72,11 @@ class GlobalSettings:
 
         # game process rate
         self._fps: int = 60
+        self.env_tick_generate_rate: int = 5
+        self.env_tick_process_rate: int = 100
+
+
+        self._initialized = True
 
     @property
     def frames_per_second(self):
@@ -82,3 +87,7 @@ class GlobalSettings:
         if type(value) != int:
             raise Exception(f"Frame rate cannot be non integer value - {value}")
         self._fps = value
+
+    @property
+    def board_size_enviornment(self):
+        return self.tiles_along_x * self.tiles_along_x

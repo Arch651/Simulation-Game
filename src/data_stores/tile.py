@@ -1,178 +1,220 @@
-# This class will hold each individual tile/pixel
-# This class will also handle the rendering of the tile, its state and interaction between
-# the entities and enviornment present on it
+"""
+This class will hold the tile entity that is responsible for storing the details about the enviornment
+"""
+
 import pygame
 import random
-from uuid import uuid4
+from rich import print
 
-from src.manager.entity import EntityTracker
+from src.utils.enums import (
+    EnvTickType,
+    TopEnviornmentTypes,
+    BaseEnviornmentTypes,
+    EnviornmentalAttributes,
+)
+from src.utils.mapper import mapper
+from src.manager.settings import GlobalSettings
 from src.manager.enviornment import EnviornmentTracker
-from src.utils.enums import EnviornmentTypes, EntityTypes, EntityFoodType
+
 
 class Tile:
     def __init__(
         self,
-        window,
-        world,
+        window: pygame.Surface,
         identifier: tuple[int],
-        x_cord: int,
-        y_cord: int,
-        length: float,
-        width: float,
-        entity_tracker: EntityTracker,
-        env_tracker: EnviornmentTracker
+        position_x: int,
+        position_y: int,
+        settings: GlobalSettings,
+        enviornment_tracker: EnviornmentTracker,
     ):
-        self.identifier: tuple = identifier
+        self.identifier: tuple[int] = identifier
+        self.position_x: int = position_x
+        self.position_y: int = position_y
+        self.window: pygame.Surface = window
 
-        self.x_cord: int = x_cord
-        self.y_cord: int = y_cord
-        self.length: float = length
-        self.width: float = width
-        self.window = window
-        self.world = world
+        # passed from the world instead of building a new one everytime
+        self.settings: GlobalSettings = settings
+        self.enviornment_tracker: EnviornmentTracker = enviornment_tracker
 
-        self.color: tuple[int] = (99, 81, 71)
-        self._has_updated: bool = True
-
-        # how likely each env type is to spawn on the current tile
-        self.env_weights: dict[EnviornmentTypes,float] = {
-            key:random.random()
-            for key in EnviornmentTypes
+        # now lets calculate its enviornmental attributes
+        self.enviornmental_attributes: dict[EnviornmentalAttributes, float] = {
+            key: random.random() for key in EnviornmentalAttributes
         }
 
-        # how likely each entity type is to spawn on the current tile
-        self.entity_weight: dict[EntityTypes,float] = {
-            key:random.random()
-            for key in EntityTypes
-        }
+        # this variable will store what is enviornment is there on the tile currently
+        self.enviornment_layers: dict[
+            int, TopEnviornmentTypes | BaseEnviornmentTypes
+        ] = {}
+
+        self.base_color: tuple[int] = (0,0,0) #(99, 81, 71)
+        self.should_render: bool = True
+
+    
+    def process_env_tick(
+        self,
+        enviornment_attribute: EnviornmentalAttributes,
+        env_tick_type: EnvTickType,
+        enviornment_to_spawn: BaseEnviornmentTypes | TopEnviornmentTypes | None
+    ) -> BaseEnviornmentTypes | TopEnviornmentTypes | None:
         
-        # enviornment details
-        self.current_enviornment: EnviornmentTypes | None = None
-        self.env_tracker_instance: EnviornmentTracker = env_tracker
-        # entity details
-        self.entity_exists: bool = False
-        self.entities_on_tile: dict[EntityFoodType,list[str]] = {
-            key:[]
-            for key in EntityFoodType
-        }
-        self.entity_tracker_instance: EntityTracker = entity_tracker
+        if enviornment_to_spawn == None:
+            if self.enviornment_layers.get(0) == None:
+                # need to determine the base layer to spawn
+                enviornment_to_spawn = random.choice(
+                    mapper.get_base_env_for_env_attributes(key=enviornment_attribute)
+                )
+            else:
+                # need to determine the top layer to spawn
+                possible_top_layer = self.enviornment_tracker.get_env_element(
+                    self.enviornment_layers.get(0)
+                ).fetch_possible_top_layers(
+                    environmental_attribute=enviornment_attribute,
+                    enviornmental_tick_type=env_tick_type
+                )
+
+                if len(possible_top_layer) == 0:
+                    # no possible top layers found for the provided combination
+                    return None
+
+                enviornment_to_spawn = random.choice(possible_top_layer)
+
+        if (
+            self.enviornmental_attributes[enviornment_attribute] >= 0.2
+            and self.enviornment_tracker.get_current_count(enviornment_to_spawn) < self.enviornment_tracker.get_max_count(
+                enviornment_to_check=enviornment_to_spawn,
+                base_layer=self.enviornment_layers.get(0)
+            )
+        ):
+            # if it is possible to spawn the selected env
+            key = max(self.enviornment_layers.keys()) + 1 if len(self.enviornment_layers.keys()) != 0 else 0
+            self.enviornment_layers[key] = enviornment_to_spawn
+            return enviornment_to_spawn
+        elif (
+            enviornment_attribute == EnviornmentalAttributes.fertility
+            and self.enviornmental_attributes[enviornment_attribute] < 0.15
+            and self.enviornment_layers.get(0) == None
+            and self.enviornment_tracker.get_current_count(BaseEnviornmentTypes.barren) < self.enviornment_tracker.get_max_count(BaseEnviornmentTypes.barren)
+        ):
+            # in case the event was to grow a grass layer but the fertility is too low
+            # the land can convert into a barrent land
+            self.enviornment_layers[0] = BaseEnviornmentTypes.barren
+            return BaseEnviornmentTypes.barren
+        else:
+            return None
+    
+
+    def env_tick(
+        self,
+        enviornment_attribute: EnviornmentalAttributes,
+        env_tick_type: EnvTickType,
+        growth_direction: int = 1,
+        enviornment_to_spawn: BaseEnviornmentTypes | TopEnviornmentTypes | None = None,
+    ) -> BaseEnviornmentTypes | TopEnviornmentTypes | None:
+
+        spawned_env_type = None
+
+        if (
+            (
+                enviornment_to_spawn in list(TopEnviornmentTypes) and (
+                    self.enviornment_layers.get(0) == None
+                    or enviornment_to_spawn not in self.enviornment_tracker.get_env_element(
+                        self.enviornment_layers.get(0)
+                    ).fetch_possible_top_layers(
+                        environmental_attribute=enviornment_attribute,
+                        enviornmental_tick_type=None
+                    )
+                )
+            )
+            or (self.enviornment_layers.get(0) != None and self.enviornment_layers.get(1) != None)
+            or growth_direction not in (-1,1)
+           
+        ):
+            # all sorts of immediate failure condition
+            return spawned_env_type   
+
+        if (
+            env_tick_type == EnvTickType.passive
+            and enviornment_to_spawn in list(BaseEnviornmentTypes)
+            and self.enviornment_layers.get(0) != None
+        ):
+            # there is a baseEnv spawn even of passive kind and the current block only has a base layer
+            # we will remove the associated event and let it continue 
+            enviornment_to_spawn = None
+        
+        # now we will calibrate the growth factors
+        if growth_direction == -1:
+            self.enviornmental_attributes[enviornment_attribute] = max(
+                0, self.enviornmental_attributes[enviornment_attribute] - 0.1
+            )
+
+        elif growth_direction == 1:
+            self.enviornmental_attributes[enviornment_attribute] = min(
+                1,self.enviornmental_attributes[enviornment_attribute] + 0.1
+            )
+        
+        spawned_env_type = self.process_env_tick(
+            enviornment_attribute=enviornment_attribute,
+            env_tick_type=env_tick_type,
+            enviornment_to_spawn=enviornment_to_spawn
+        )
+
+        if spawned_env_type != None:
+            self.should_render = True
+            self.enviornment_tracker.update_evn_element_count(
+                key=spawned_env_type,
+                value=1
+            )
+
+        return spawned_env_type
 
     def render(self):
-        
-        # if there is an evniornment then draw the enviornment 
-        if self.current_enviornment != None:
-            self.env_tracker_instance.get_env_element(self.current_enviornment).render(
-                x_cord=self.x_cord,
-                y_cord=self.y_cord,
-                length=self.length,
-                width=self.width
+
+        if self.enviornment_layers.get(1) != None:
+            # if there is a top layer, then ask the enviornment tracker to do the render
+            env_element_instance = self.enviornment_tracker.get_env_element(
+                key=self.enviornment_layers[1]
             )
-        
+
+            env_element_instance.render(
+                position_x=self.position_x,
+                position_y=self.position_y,
+                length=self.settings.scale_along_x,
+                height=self.settings.scale_along_y,
+            )
+
+            self.enviornment_tracker.get_env_element(
+                key=self.enviornment_layers[0]
+            ).render(
+                position_x=self.position_x,
+                position_y=self.position_y,
+                length=self.settings.scale_along_x,
+                height=self.settings.scale_along_y,
+                full=False
+            )
+
+        elif self.enviornment_layers.get(0) != None:
+            # if there is a base layer, then ask the enviornment tracker to do the render
+            env_element_instance = self.enviornment_tracker.get_env_element(
+                key=self.enviornment_layers[0]
+            )
+
+            env_element_instance.render(
+                position_x=self.position_x,
+                position_y=self.position_y,
+                length=self.settings.scale_along_x,
+                height=self.settings.scale_along_y,
+            )
+
         else:
             pygame.draw.rect(
-                surface=self.window,
-                color=self.color,
+                self.window,
+                color=self.base_color,
                 rect=pygame.Rect(
-                    self.x_cord,
-                    self.y_cord,
-                    self.length,
-                    self.width
-                )
+                    self.position_x,
+                    self.position_y,
+                    self.settings.scale_along_x,
+                    self.settings.scale_along_y,
+                ),
             )
 
-        # draw all the entities that are there on the current tile
-        for entity_food_type,entity_id_list in self.entities_on_tile.items():
-            for entity_id in entity_id_list:
-                entity_instance = self.entity_tracker_instance.get_entity_instance(
-                    entity_food_type=entity_food_type,
-                    identifier=entity_id
-                )
-
-                if entity_instance == None:
-                    continue
-
-                entity_instance.render(
-                    length=self.length,
-                    width=self.width
-                )
-        
-        self._has_updated = False
-    
-    def env_tick(self,type_to_spawn: EnviornmentTypes | None = None) -> None | EnviornmentTypes:
-        # an enviornment event is triggered on this tile
-
-        if type_to_spawn == None:
-            # if this is the eye, then we will need to decide what to spawn
-            type_to_spawn = random.choice(list(self.env_weights.keys()))
-
-        if self.current_enviornment != None:
-            # there is already an env on this tile
-            self.env_weights[type_to_spawn] = min(self.env_weights[type_to_spawn] + 0.1, 1)
-            return None # no further attempts needed
-        else:
-            # there is nothing here, we can attempt a spawn
-            if (
-                self.env_weights[type_to_spawn] >= 0.5
-                and self.env_tracker_instance.get_current_count(key=type_to_spawn) < self.env_tracker_instance.get_max_count(key=type_to_spawn)
-            ):
-                # the weight to spawn is high enough and the max count is still not reached
-                self.current_enviornment = type_to_spawn
-                self.env_tracker_instance.update_evn_element_count(key=type_to_spawn,value=1)
-                self.env_weights[type_to_spawn] = min(max(0,self.env_weights[type_to_spawn] - 0.1),0.3)
-                self._has_updated = True # since we have updated the tile
-                return type_to_spawn
-            
-            else:
-                self.env_weights[type_to_spawn] = min(self.env_weights[type_to_spawn] + 0.1, 1)
-                return None
-    
-    def entity_tick(self,type_to_spawn: EntityTypes | None = None) -> None | EntityTypes:
-        if type_to_spawn == None:
-            # this is the start point for the pack
-            type_to_spawn = random.choice(list(self.entity_weight.keys()))
-        
-        # multiple entities can exist on a tile, but if any entity exists on the tile, 
-        # the tile cannot spawn a new entity
-        if self.entity_exists:
-            # there is someone on this tile currently
-            self.entity_weight[type_to_spawn] = min(self.entity_weight[type_to_spawn] + 0.1, 1)
-            return None
-
-        else:
-            if (
-                self.entity_weight[type_to_spawn] >= 0.5
-                and self.entity_tracker_instance.get_current_count(type_to_spawn) < self.entity_tracker_instance.get_max_count(type_to_spawn)
-            ):
-                # mark the flags as true
-                self.entity_exists = True 
-                self._has_updated = True
-
-                entity_id = str(uuid4())
-                entity_food_type = self.entity_tracker_instance.register_entity(
-                    tile_identifier=self.identifier,
-                    identifier=entity_id,
-                    key=type_to_spawn,
-                    x_cord=self.x_cord,
-                    y_cord=self.y_cord,
-                    world=self.world
-                )
-
-                self.entities_on_tile[entity_food_type].append(entity_id)
-                self.entity_tracker_instance.update_entity_element_count(key=type_to_spawn,value=1)
-                self.entity_weight[type_to_spawn] = min(max(0,self.entity_weight[type_to_spawn] - 0.1),0.3)
-                return type_to_spawn
-            
-            else:
-                self.entity_weight[type_to_spawn] = min(self.entity_weight[type_to_spawn] + 0.1, 1)
-                return None
-
-
-    @property
-    def has_updated(self):
-        return self._has_updated
-        
-    @has_updated.setter
-    def has_updated(self,value:bool):
-        if value not in (True, False):
-            raise Exception(f"Incorrect value passed for tile has_updated - {value}")
-        self._has_updated = value
+        self.should_render = False

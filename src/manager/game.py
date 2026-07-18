@@ -1,4 +1,5 @@
 import pygame
+from rich import print
 
 from src.manager.world import WorldManager
 from src.manager.settings import GlobalSettings
@@ -36,6 +37,10 @@ class GameManager:
         self.game_clock = pygame.time.Clock()
 
         self.running: bool = True
+        self.world_manager: WorldManager = WorldManager(
+            window=self.window,
+            settings=self.settings
+        )
 
     def generate_base_game_view(self,only_game_area:bool = False) -> None:
         # this function will redraw the base layer of the game display for when 
@@ -87,8 +92,9 @@ class GameManager:
         """
         The main game loop that controls when each function gets called and controls the main game 
         """
-        # draw the initial game screen
+        # Operations that need to be performed before the game starts
         self.generate_base_game_view()
+        self.world_manager.generate_game_world()
 
         while self.running:
             # check if the game window has been closed
@@ -98,8 +104,9 @@ class GameManager:
 
             #=============================================================#
             # the main game function wil go here
-
-
+            self.world_manager.render_tile()
+            self.world_manager.process_loop()
+            # print(self.world_manager.enviornment_tracker.current_and_max_all())
             
             #=============================================================#
             # final block that displays the frame on the screen

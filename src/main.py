@@ -3,8 +3,8 @@ from src.manager.game import GameManager
 
 def main():
     # these will act as the reference point
-    base_length_per_pixel: float = 12
-    base_width_per_pixel: float = 10
+    base_length_per_pixel: float = 6
+    base_width_per_pixel: float = 5
 
     world_obj = GameManager(
         length_per_pixel=base_length_per_pixel, 

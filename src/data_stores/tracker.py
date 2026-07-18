@@ -2,7 +2,7 @@
 
 from src.entity.base import BaseEntity
 from src.utils.enums import ElementType
-from src.enviornment.base import BaseEnviornment
+from src.enviornment.base_env import EnviornmentBase
 
 class Tracker:
     def __init__(
