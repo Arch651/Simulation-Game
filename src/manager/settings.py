@@ -75,6 +75,8 @@ class GlobalSettings:
         self.env_tick_generate_rate: int = 5
         self.env_tick_process_rate: int = 100
 
+        self.entity_tick_generate_rate: int = 10
+        self.entity_tick_process_rate: int = 100
 
         self._initialized = True
 
@@ -91,3 +93,7 @@ class GlobalSettings:
     @property
     def board_size_enviornment(self):
         return self.tiles_along_x * self.tiles_along_x
+    
+    @property
+    def board_size_entity(self):
+        return self.game_area_x_length * self.game_area_y_length

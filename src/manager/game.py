@@ -1,7 +1,7 @@
 import pygame
 from rich import print
 
-from src.manager.world import WorldManager
+from src.manager.enviornment_world import EnviornmentWorldManager
 from src.manager.settings import GlobalSettings
 
 
@@ -37,7 +37,7 @@ class GameManager:
         self.game_clock = pygame.time.Clock()
 
         self.running: bool = True
-        self.world_manager: WorldManager = WorldManager(
+        self.world_manager: EnviornmentWorldManager = EnviornmentWorldManager(
             window=self.window,
             settings=self.settings
         )
@@ -106,7 +106,6 @@ class GameManager:
             # the main game function wil go here
             self.world_manager.render_tile()
             self.world_manager.process_loop()
-            # print(self.world_manager.enviornment_tracker.current_and_max_all())
             
             #=============================================================#
             # final block that displays the frame on the screen

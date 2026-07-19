@@ -6,7 +6,7 @@ from rich import print
 
 from src.utils.mapper import mapper
 from src.data_stores.tile import Tile
-from src.manager.world import WorldManager
+from src.manager.enviornment_world import EnviornmentWorldManager
 from src.data_stores.tick import EntityTick
 
 
@@ -17,11 +17,11 @@ class EntityGenerator:
         spaces_on_y: int,
         process_rate: int,
         new_entity_gen_rate: int,
-        world_manager: WorldManager
+        world_manager: EnviornmentWorldManager
     ):
         self.spaces_on_x: int = spaces_on_x
         self.spaces_on_y: int = spaces_on_y
-        self.world_manager: WorldManager = world_manager
+        self.world_manager: EnviornmentWorldManager = world_manager
 
         # queue details
         self.process_queue: list[EntityTick] = []

@@ -13,7 +13,7 @@ from src.data_stores.tick import EnviornmentTick
 from src.manager.enviornment import EnviornmentTracker
 
 
-class WorldManager:
+class EnviornmentWorldManager:
     _instance = None
     _initialized = False
 
@@ -33,13 +33,14 @@ class WorldManager:
         self.window: pygame.Surface = window
         self.settings: GlobalSettings = settings
         self.enviornment_tracker: EnviornmentTracker = EnviornmentTracker(
-            window=self.window, board_size=self.settings.board_size_enviornment
+            window=self.window, 
+            board_size=self.settings.board_size_enviornment
         )
 
         self.tile_grid: list[list[Tile]] = []
 
         self.env_tick_queue: list[EnviornmentTick] = []
-        self.tile_with_event_tracker: set[tuple[int]] = set()
+        self.tile_with_event: set[tuple[int]] = set()
 
         self._initialized = True
 
@@ -76,7 +77,7 @@ class WorldManager:
     def process_env_tick(self):
         # fetching the event that needs to be processed
         event_to_process = self.env_tick_queue.pop(0)
-        self.tile_with_event_tracker.remove(
+        self.tile_with_event.remove(
             (event_to_process.position_x, event_to_process.position_y)
         )
 
@@ -170,10 +171,10 @@ class WorldManager:
 
             for event in events_to_queue:
                 tile_identifier = (event["position_x"],event["position_y"])
-                if tile_identifier in self.tile_with_event_tracker:
+                if tile_identifier in self.tile_with_event:
                     continue
 
-                self.tile_with_event_tracker.add(tile_identifier)
+                self.tile_with_event.add(tile_identifier)
                 self.env_tick_queue.append(EnviornmentTick(
                     position_x=event["position_x"],
                     position_y=event["position_y"],
@@ -198,10 +199,10 @@ class WorldManager:
 
                 tile_identifier = (x_cord, y_cord)
 
-                if tile_identifier in self.tile_with_event_tracker:
+                if tile_identifier in self.tile_with_event:
                     continue
 
-                self.tile_with_event_tracker.add(tile_identifier)
+                self.tile_with_event.add(tile_identifier)
                 self.env_tick_queue.append(
                     EnviornmentTick(
                         position_x=x_cord,
@@ -217,7 +218,5 @@ class WorldManager:
             counter < self.settings.env_tick_process_rate
             and len(self.env_tick_queue) > 0
         ):
-
             self.process_env_tick()
-
             counter += 1
